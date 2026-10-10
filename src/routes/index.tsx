@@ -1,24 +1,32 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useEffect, useRef } from "react";
+import portfolioMarkup from "../portfolio/markup.html?raw";
 
-// No head() here: the home route inherits title/description/og/twitter from
-// __root.tsx, and ships no og:image so serve-time hosting can inject the
-// project's social preview (explicit og:image or latest screenshot).
 export const Route = createFileRoute("/")({
+  head: () => ({
+    meta: [
+      { title: "Elijah | B2C SaaS Copywriter (Ex Full-Stack Dev)" },
+      { name: "description", content: "I write copy that makes users click, not just read. Elijah — full-stack dev turned B2C SaaS copywriter. React / Django / Supabase." },
+      { property: "og:title", content: "Elijah | B2C SaaS Copywriter" },
+      { property: "og:description", content: "Full-stack dev turned B2C copywriter. Copy that makes users click, not just read." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+    ],
+  }),
   component: Index,
 });
 
-// IMPORTANT: Replace this placeholder. See ./README.md for routing conventions.
 function Index() {
+  const portfolio = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const images = portfolio.current?.querySelectorAll(".visual-frame > img");
+    images?.forEach((image) => {
+      if (image instanceof HTMLImageElement && image.complete && image.naturalWidth > 0) {
+        image.parentElement?.classList.add("has-image");
+      }
+    });
+  }, []);
   return (
-    <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
-    >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
-      />
-    </div>
+    <div ref={portfolio} dangerouslySetInnerHTML={{ __html: portfolioMarkup }} />
   );
 }
