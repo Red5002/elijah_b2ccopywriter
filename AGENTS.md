@@ -11,3 +11,5 @@
 
 - Keep the uploaded portfolio as standalone HTML source and derive its preview markup and styles from that source so the Render deliverable and app preview stay aligned.
 - Preserve single-page portfolio navigation with section anchors; contact CTAs use the existing owner's email unless a booking URL is supplied.
+
+- Derive the screenshot viewer markup, styles, and interaction module from the standalone portfolio source so enlargement works identically in both deliveries.
