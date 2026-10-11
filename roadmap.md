@@ -5,3 +5,4 @@
 - [x] Verify desktop/mobile layout and links.
 - [x] Embed the four actual project images and verify they load on desktop and phone.
 - [x] Add the pricing / micro-offers section between the work case studies and "How I think".
+- [x] Make each pricing card open its own pre-filled email, keeping the general "Fix My Flow" button.
