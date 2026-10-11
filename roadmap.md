@@ -4,3 +4,4 @@
 - [x] Show the same portfolio in the app preview and deliver standalone Render-ready HTML.
 - [x] Verify desktop/mobile layout and links.
 - [x] Embed the four actual project images and verify they load on desktop and phone.
+- [x] Add the pricing / micro-offers section between the work case studies and "How I think".
