@@ -9,7 +9,8 @@
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
 
-- Keep the uploaded portfolio as standalone HTML source and derive its preview markup and styles from that source so the Render deliverable and app preview stay aligned.
+- Preserve uploaded HTML as reference source and derive native React section markup and shared CSS from it; the live app uses React components rather than injected HTML so sections can be maintained independently.
 - Preserve single-page portfolio navigation with section anchors; contact CTAs use the existing owner's email unless a booking URL is supplied.
 
-- Derive the screenshot viewer markup, styles, and interaction module from the standalone portfolio source so enlargement works identically in both deliveries.
+- Preserve source screenshot-viewer behavior through React state and a native dialog so zoom, Escape dismissal, and focus restoration remain available.
+- Compose Portfolio from Navigation, Hero, Services, SelectedWork, About, and Contact; Services owns the three offer components and order-modal files stay empty until implementation is requested.
