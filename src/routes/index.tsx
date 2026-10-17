@@ -1,7 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useRef } from "react";
-import portfolioMarkup from "../portfolio/markup.html?raw";
-import { initializePortfolio } from "../portfolio/interactions.js";
+import { Portfolio } from "../portfolio/Portfolio";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -18,30 +16,5 @@ export const Route = createFileRoute("/")({
 });
 
 function Index() {
-  const portfolio = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const root = portfolio.current;
-    if (!root) return;
-    const images = root.querySelectorAll(".screenshot-link img");
-    const markLoaded = (event: Event) => {
-      const image = event.target;
-      if (image instanceof HTMLImageElement && image.naturalWidth > 0) {
-        image.closest(".visual-frame")?.classList.add("has-image");
-      }
-    };
-    root.addEventListener("load", markLoaded, true);
-    images?.forEach((image) => {
-      if (image instanceof HTMLImageElement && image.complete && image.naturalWidth > 0) {
-        image.closest(".visual-frame")?.classList.add("has-image");
-      }
-    });
-    const cleanup = initializePortfolio(root);
-    return () => {
-      root.removeEventListener("load", markLoaded, true);
-      cleanup();
-    };
-  }, []);
-  return (
-    <div ref={portfolio} dangerouslySetInnerHTML={{ __html: portfolioMarkup }} />
-  );
+  return <Portfolio />;
 }

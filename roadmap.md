@@ -7,3 +7,6 @@
 - [x] Add the pricing / micro-offers section between the work case studies and "How I think".
 - [x] Make each pricing card open its own pre-filled email, keeping the general "Fix My Flow" button.
 - [x] Refine screenshot viewing, pricing hierarchy and highlight, heading rhythm, and Offers navigation.
+- [ ] Migrate the updated upload to native React sections and preserve copy, assets, links, and screenshot enlargement.
+- [ ] Reserve empty Order Modal, Client Details, Offer-Specific Questions, Order Summary, and Payment files without implementing ordering.
+- [ ] Verify the migrated portfolio and report the missing portrait asset.
