@@ -18,7 +18,9 @@ export function ScreenshotViewer({ children }: { children: ReactNode }) {
     if (!image || !dialog.current) return;
     dialog.current.showModal();
     document.body.classList.add("viewer-open");
-    return () => { document.body.classList.remove("viewer-open"); };
+    return () => {
+      document.body.classList.remove("viewer-open");
+    };
   }, [image]);
 
   const toggleZoom = () => {
@@ -32,21 +34,54 @@ export function ScreenshotViewer({ children }: { children: ReactNode }) {
   };
 
   return (
-    <ViewerContext.Provider value={{ openImage: (src, alt, element) => {
-      trigger.current = element;
-      setZoomed(false);
-      setImage({ src, alt });
-    } }}>
+    <ViewerContext.Provider
+      value={{
+        openImage: (src, alt, element) => {
+          trigger.current = element;
+          setZoomed(false);
+          setImage({ src, alt });
+        },
+      }}
+    >
       {children}
-      <dialog ref={dialog} className="image-viewer" aria-labelledby="viewer-title" onClose={onClose}>
+      <dialog
+        ref={dialog}
+        className="image-viewer"
+        aria-labelledby="viewer-title"
+        onClose={onClose}
+      >
         <div className="viewer-toolbar">
-          <p className="viewer-title" id="viewer-title">{image?.alt}</p>
+          <p className="viewer-title" id="viewer-title">
+            {image?.alt}
+          </p>
           <div className="viewer-controls">
-            <Button variant="portfolio" className="btn icon-button" onClick={toggleZoom} aria-label={zoomed ? "Zoom out" : "Zoom in"} title={zoomed ? "Zoom out" : "Zoom in"} aria-pressed={zoomed}>{zoomed ? "−" : "+"}</Button>
-            <Button variant="portfolio" className="btn icon-button" onClick={() => dialog.current?.close()} aria-label="Close image" title="Close image">×</Button>
+            <Button
+              variant="portfolio"
+              className="btn icon-button"
+              onClick={toggleZoom}
+              aria-label={zoomed ? "Zoom out" : "Zoom in"}
+              title={zoomed ? "Zoom out" : "Zoom in"}
+              aria-pressed={zoomed}
+            >
+              {zoomed ? "−" : "+"}
+            </Button>
+            <Button
+              variant="portfolio"
+              className="btn icon-button"
+              onClick={() => dialog.current?.close()}
+              aria-label="Close image"
+              title="Close image"
+            >
+              ×
+            </Button>
           </div>
         </div>
-        <div ref={stage} className={`viewer-stage${zoomed ? " zoomed" : ""}`} tabIndex={0} aria-label="Enlarged screenshot">
+        <div
+          ref={stage}
+          className={`viewer-stage${zoomed ? " zoomed" : ""}`}
+          tabIndex={0}
+          aria-label="Enlarged screenshot"
+        >
           {image && <img src={image.src} alt={image.alt} onClick={toggleZoom} />}
         </div>
       </dialog>
