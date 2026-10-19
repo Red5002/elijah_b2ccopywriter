@@ -1,11 +1,6 @@
-import email from "@/assets/subzero-email.jpg.asset.json";
-import modal from "@/assets/subzero-modal.jpg.asset.json";
-import success from "@/assets/subzero-success.jpg.asset.json";
-import clips from "@/assets/clipforge-grid.jpg.asset.json";
-
 export const assets = {
-  subzero_email: email.url,
-  subzero_modal: modal.url,
-  subzero_success: success.url,
-  clipforge_grid: clips.url,
+  subzero_email: "/subzero_email.jpg",
+  subzero_modal: "/subzero_modal.jpg",
+  subzero_success: "/subzero_success.jpg",
+  clipforge_grid: "/clipforge.jpg",
 };

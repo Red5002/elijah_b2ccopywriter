@@ -39,18 +39,7 @@ export function About() {
       <section id="about" className="section band">
         <div className="container about-layout">
           <div className="identity">
-            <img
-              alt="Elijah"
-              className="portrait"
-              src="/elijah.jpeg"
-              hidden
-              onLoad={(event) => {
-                event.currentTarget.hidden = false;
-              }}
-              onError={(event) => {
-                event.currentTarget.hidden = true;
-              }}
-            />
+            <img alt="Elijah" className="portrait" src="/elijah.jpeg" />
             <div className="eyebrow">{"Code • Copy • Clicks"}</div>
             <h3>{"Elijah"}</h3>
             <p>
