@@ -1,6 +1,10 @@
 import { Button } from "@/components/ui/button";
 
-export function ActivationRewrite() {
+type ActivationRewriteProps = {
+  onSelectOffer: (trigger: HTMLElement) => void;
+};
+
+export function ActivationRewrite({ onSelectOffer }: ActivationRewriteProps) {
   return (
     <>
       {" "}
@@ -15,11 +19,14 @@ export function ActivationRewrite() {
             "Hero + empty state + welcome email. The 3 screens that decide if sign-ups become paying users."
           }
         </p>
-        <Button asChild variant="portfolio" className="pricing-cta portfolio-button">
-          <a href="mailto:amujoelijah3@gmail.com?subject=Activation%20Pack%20-%20%24195&body=Hey%20Elijah%2C%0A%0AI%20want%20the%20Activation%20Rewrite.%0A%0AProduct%3A%20%0ACurrent%20issue%3A%20Low%20activation%20%2F%20drop-off%20after%20signup%0A%0ALet's%20go.">
-            {"Fix My Activation "}
-            <span aria-hidden="true">{"→"}</span>
-          </a>
+        <Button
+          type="button"
+          variant="portfolio"
+          className="pricing-cta portfolio-button"
+          onClick={(event) => onSelectOffer(event.currentTarget)}
+        >
+          {"Fix My Activation "}
+          <span aria-hidden="true">{"→"}</span>
         </Button>
         <p className="payment-note">
           {"I accept Paystack (card), Wise USD transfer, or bank transfer. No PayPal needed."}

@@ -1,7 +1,13 @@
 import { PaidAudit } from "./services/PaidAudit";
 import { FlowFix } from "./services/FlowFix";
 import { ActivationRewrite } from "./services/ActivationRewrite";
-export function Services() {
+import type { OrderOfferId } from "@/lib/orders";
+
+type ServicesProps = {
+  onSelectOffer: (offerId: OrderOfferId, trigger: HTMLElement) => void;
+};
+
+export function Services({ onSelectOffer }: ServicesProps) {
   return (
     <>
       {" "}
@@ -54,9 +60,11 @@ export function Services() {
             <p>{"You don't need a full rewrite to see lift. Start with one friction point."}</p>
           </div>
           <div className="pricing-grid">
-            <PaidAudit />
-            <FlowFix />
-            <ActivationRewrite />
+            <PaidAudit onSelectOffer={(trigger) => onSelectOffer("paid-audit", trigger)} />
+            <FlowFix onSelectOffer={(trigger) => onSelectOffer("flow-fix", trigger)} />
+            <ActivationRewrite
+              onSelectOffer={(trigger) => onSelectOffer("activation-rewrite", trigger)}
+            />
           </div>
           <div className="pricing-foot">
             <p className="pricing-note">

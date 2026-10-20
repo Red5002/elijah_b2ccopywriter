@@ -1,6 +1,10 @@
 import { Button } from "@/components/ui/button";
 
-export function PaidAudit() {
+type PaidAuditProps = {
+  onSelectOffer: (trigger: HTMLElement) => void;
+};
+
+export function PaidAudit({ onSelectOffer }: PaidAuditProps) {
   return (
     <>
       {" "}
@@ -15,11 +19,14 @@ export function PaidAudit() {
             "15-min Loom teardown. I find 3 spots where you lose users — with exact rewrites you can ship today. $25 credited if you book Flow Fix."
           }
         </p>
-        <Button asChild variant="portfolio" className="pricing-cta portfolio-button">
-          <a href="mailto:amujoelijah3@gmail.com?subject=Teardown%20-%20%2425&body=Hey%20Elijah%2C%0A%0AI%20want%20the%20%2425%20Teardown%20for%3A%0AProduct%20link%3A%20%0AWhat%20feels%20off%3A%20%0A%0AHow%20do%20I%20pay%3F%20Send%20me%20a%20link.%0A%0A-Cheers">
-            {"Get Audit "}
-            <span aria-hidden="true">{"→"}</span>
-          </a>
+        <Button
+          type="button"
+          variant="portfolio"
+          className="pricing-cta portfolio-button"
+          onClick={(event) => onSelectOffer(event.currentTarget)}
+        >
+          {"Get Audit "}
+          <span aria-hidden="true">{"→"}</span>
         </Button>
         <p className="payment-note">
           {"I accept Paystack (card), Wise USD transfer, or bank transfer. No PayPal needed."}
