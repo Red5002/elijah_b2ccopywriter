@@ -19,8 +19,7 @@ function getSensitiveValues(input: unknown): string[] {
   ].filter((value): value is string => typeof value === "string" && value.length > 0);
 }
 
-function safeErrorMessage(error: unknown, input: unknown): string {
-  const message = error instanceof Error ? error.message : "Unknown server-side order error";
+function redactSensitiveText(message: string, input: unknown): string {
   const redactedMessage = getSensitiveValues(input)
     .sort((left, right) => right.length - left.length)
     .reduce((safe, value) => {
@@ -31,27 +30,51 @@ function safeErrorMessage(error: unknown, input: unknown): string {
     .replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, "[redacted-email]")
     .replace(/Bearer\s+[^\s"']+/gi, "Bearer [redacted]")
     .replace(/((?:authorization|apikey|api_key)\s*[:=]\s*["']?)[^,"'\s}]+/gi, "$1[redacted]")
-    .replace(/eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/g, "[redacted-token]");
+    .replace(
+      /(^|[^A-Za-z0-9_-])(eyJ[A-Za-z0-9_-]+={0,2}\.[A-Za-z0-9_-]+={0,2}\.[A-Za-z0-9_-]+={0,2})(?=$|[^A-Za-z0-9_-])/g,
+      "$1[redacted-token]",
+    );
   return redactedMessage.slice(0, 500);
 }
 
-function logOrderFailure(operation: string, error: unknown, input: unknown) {
-  const details = error !== null && typeof error === "object" ? error : {};
-  const code = "code" in details && typeof details.code === "string" ? details.code : undefined;
-  const status =
-    "status" in details && typeof details.status === "number"
-      ? details.status
-      : "statusCode" in details && typeof details.statusCode === "number"
-        ? details.statusCode
-        : undefined;
+function getErrorText(error: unknown, field: string): string | undefined {
+  if (error === null || typeof error !== "object") return undefined;
+  const value = Reflect.get(error, field);
+  return typeof value === "string" ? value : undefined;
+}
 
-  console.error("[order-submission] server failure", {
-    operation,
-    name: error instanceof Error ? error.name : typeof error,
-    message: safeErrorMessage(error, input),
-    ...(code ? { code } : {}),
-    ...(status !== undefined ? { status } : {}),
-  });
+export function safeErrorMessage(error: unknown, input: unknown): string {
+  const message =
+    getErrorText(error, "message") ??
+    (error instanceof Error ? error.message : "Unknown server-side order error");
+  return redactSensitiveText(message, input);
+}
+
+export function safeErrorDiagnostics(operation: string, error: unknown, input: unknown) {
+  const fields = ["code", "message", "details", "hint"] as const;
+  const diagnostics: {
+    operation: string;
+    code?: string;
+    message?: string;
+    details?: string;
+    hint?: string;
+  } = { operation };
+
+  for (const field of fields) {
+    const value = getErrorText(error, field);
+    if (value !== undefined) {
+      diagnostics[field] = redactSensitiveText(value, input);
+    }
+  }
+
+  if (!diagnostics.message) {
+    diagnostics.message = safeErrorMessage(error, input);
+  }
+  return diagnostics;
+}
+
+function logOrderFailure(operation: string, error: unknown, input: unknown) {
+  console.error("[order-submission] server failure", safeErrorDiagnostics(operation, error, input));
 }
 
 export async function createOrderWithSupabase(input: unknown) {
@@ -86,6 +109,7 @@ export async function createOrderWithSupabase(input: unknown) {
           .from("services")
           .select("id, name, price, currency")
           .eq("id", serviceId)
+          .eq("active", true)
           .maybeSingle();
         if (error) throw error;
         return data;

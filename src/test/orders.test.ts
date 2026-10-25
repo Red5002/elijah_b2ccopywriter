@@ -5,6 +5,62 @@ import {
   OrderCreationError,
   type OrderRepository,
 } from "../lib/orderSubmission";
+import { safeErrorDiagnostics, safeErrorMessage } from "../lib/submitOrder.server";
+
+describe("server error redaction", () => {
+  it("redacts JWT-like tokens and other sensitive patterns safely", () => {
+    const jwt = "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjMifQ.signature123456";
+    const apiKey = "key+with[regex]chars";
+    const message = [
+      "user@example.com",
+      "Bearer bearer-secret",
+      "authorization: auth-secret",
+      "apikey=api-secret",
+      "api_key: snake-secret",
+      `token=${jwt}`,
+      apiKey,
+    ].join(" | ");
+
+    const result = safeErrorMessage(new Error(message), {
+      values: { productName: apiKey },
+    });
+
+    expect(result).not.toContain(jwt);
+    expect(result).not.toContain(apiKey);
+    expect(result).toBe(
+      "[redacted-email] | Bearer [redacted] | authorization: [redacted] | apikey=[redacted] | api_key: [redacted] | token=[redacted-token] | [redacted]",
+    );
+  });
+
+  it("extracts safe Supabase fields from plain-object errors and omits other fields", () => {
+    const email = "flowfix-customer@example.com";
+    const token = "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjMifQ.signature123456";
+    const diagnostics = safeErrorDiagnostics(
+      "order-insert",
+      {
+        code: "23505",
+        message: `Duplicate order for ${email}`,
+        details: `customer_email=${email}`,
+        hint: `Do not retry with Bearer ${token}`,
+        status: 409,
+        stack: "internal stack",
+      },
+      { values: { email } },
+    );
+
+    expect(diagnostics).toEqual({
+      operation: "order-insert",
+      code: "23505",
+      message: "Duplicate order for [redacted]",
+      details: "customer_email=[redacted]",
+      hint: "Do not retry with Bearer [redacted]",
+    });
+    expect(JSON.stringify(diagnostics)).not.toContain(email);
+    expect(JSON.stringify(diagnostics)).not.toContain(token);
+    expect(diagnostics).not.toHaveProperty("status");
+    expect(diagnostics).not.toHaveProperty("stack");
+  });
+});
 
 describe("order schemas", () => {
   it("requires valid contact, product, audience, and audit concern details", () => {

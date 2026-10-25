@@ -22,7 +22,7 @@ export default defineConfig({
     ],
   },
   nitro: {
-    compatibilityDate: "2025-01-01",
+    compatibilityDate: "2025-04-01",
   },
   tanstackStart: {
     // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
