@@ -36,9 +36,13 @@
 .portfolio-order-form,.portfolio-order-fields{display:grid;gap:18px}
 .portfolio-order-field{display:grid;gap:7px}
 .portfolio-order-field label{color:var(--text);line-height:1.4}
-.portfolio-order-field input,.portfolio-order-field textarea{min-height:44px;border-color:var(--line);border-radius:var(--portfolio-radius);color:var(--text)}
+.portfolio-order-field-status{margin-left:6px;color:var(--text-dim);font-size:11px;font-weight:400}
+.portfolio-order-field input,.portfolio-order-field textarea,.portfolio-order-field select{min-height:44px;border-color:var(--line);border-radius:var(--portfolio-radius);color:var(--text)}
+.portfolio-order-field select{width:100%;padding:10px 12px;background:var(--surface);font:inherit}
+.portfolio-order-field option{background:var(--bg);color:var(--text)}
 .portfolio-order-field input::placeholder,.portfolio-order-field textarea::placeholder{color:var(--text-dim)}
 .portfolio-order-field textarea{min-height:96px;resize:vertical}
+.portfolio-order-help{color:var(--text-dim);font-size:12px;line-height:1.5}
 .portfolio-order-field [aria-invalid="true"]{border-color:var(--portfolio-accent)}
 .portfolio-order-error,.portfolio-order-status{color:var(--portfolio-accent);font-size:13px;line-height:1.5}
 .portfolio-order-action{min-height:48px}

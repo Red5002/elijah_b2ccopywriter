@@ -18,7 +18,7 @@ import {
   type OrderFormValues,
   type OrderOfferId,
 } from "@/lib/orders";
-import { submitMockOrder } from "@/lib/submitOrder";
+import { submitOrder } from "@/lib/submitOrder";
 import { OrderForm } from "./OrderForm";
 import { OrderSummary } from "./OrderSummary";
 
@@ -63,18 +63,16 @@ export function OrderModal({ offerId, onClose, triggerRef }: OrderModalProps) {
   };
 
   const createOrder = async (orderValues: OrderFormValues) => {
-    if (!offerId) return;
+    if (!offerId || status === "submitting") return;
     setStatus("submitting");
     setFailureMessage("");
     try {
-      const result = await submitMockOrder({ offer: offerId, values: orderValues });
-      setConfirmationId(result.confirmationId);
+      const result = await submitOrder({ data: { serviceId: offerId, values: orderValues } });
+      setConfirmationId(result.reference);
       setStatus("success");
     } catch (error) {
       setFailureMessage(
-        error instanceof Error
-          ? error.message
-          : "We couldn't create the test order. Please try again.",
+        error instanceof Error ? error.message : "We couldn't create your order. Please try again.",
       );
       setStatus("failure");
     }
@@ -98,21 +96,19 @@ export function OrderModal({ offerId, onClose, triggerRef }: OrderModalProps) {
             }}
           >
             <DialogHeader className="portfolio-order-header">
-              <p className="eyebrow">{"Prototype order"}</p>
+              <p className="eyebrow">{"Order request"}</p>
               <DialogTitle>{`${offer.name} · $${offer.price}`}</DialogTitle>
               <DialogDescription id="portfolio-order-description">
                 {status === "success"
-                  ? "Your test order is confirmed. No real order or payment was created."
+                  ? "Your order request is saved. No payment was taken."
                   : step === "details"
                     ? "Tell me about your product so I can tailor this offer."
-                    : "Check the details before confirming this test order."}
+                    : "Check the details before submitting your order."}
               </DialogDescription>
             </DialogHeader>
 
             <p className="portfolio-order-warning" role="note">
-              {
-                "Prototype only — do not enter real client or sensitive information. No payment is processed."
-              }
+              {"Submitting saves your order details. No payment is processed at this stage."}
             </p>
 
             {status === "success" ? (
@@ -120,8 +116,8 @@ export function OrderModal({ offerId, onClose, triggerRef }: OrderModalProps) {
                 <span className="portfolio-order-success-icon" aria-hidden="true">
                   <Check />
                 </span>
-                <h3>{"Test order confirmed"}</h3>
-                <p>{`Confirmation: ${confirmationId}`}</p>
+                <h3>{"Order request received"}</h3>
+                <p>{`Order reference: ${confirmationId}`}</p>
                 <DialogClose asChild>
                   <Button variant="portfolio" className="btn btn-primary portfolio-order-action">
                     {"Done"}
@@ -178,12 +174,12 @@ export function OrderModal({ offerId, onClose, triggerRef }: OrderModalProps) {
                     {status === "submitting" ? (
                       <>
                         <LoaderCircle className="portfolio-order-spinner" aria-hidden="true" />
-                        {"Creating test order…"}
+                        {"Creating order…"}
                       </>
                     ) : status === "failure" ? (
-                      "Retry test order"
+                      "Retry order"
                     ) : (
-                      "Confirm test order"
+                      "Submit order"
                     )}
                   </Button>
                 </div>

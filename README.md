@@ -2,8 +2,6 @@
 
 You are editing my existing B2C SaaS Copywriter portfolio website. Use my uploaded index.html as base. Do NOT rebuild from scratch. Keep my structure but apply all these changes:
 
-
-
 BRANDING:
 
 - Name: Elijah, B2C SaaS Copywriter (Ex Full-Stack Dev)
@@ -11,8 +9,6 @@ BRANDING:
 - Positioning: I write copy that makes users click, not just read. Dev background: React / Django / Supabase.
 
 - Color: Dark background #0a0a0f, neon green accent #00ff88, white text.
-
-
 
 HERO SECTION (Above the fold):
 
@@ -24,13 +20,9 @@ HERO SECTION (Above the fold):
 
 - Add small trust bar: "Built with: React • Django • Supabase • Copy that converts"
 
-
-
 PORTFOLIO SECTION:
 
 Keep 2 projects only:
-
-
 
 PROJECT 1: SubZero - Subscription Killer (B2C Fintech SaaS)
 
@@ -50,8 +42,6 @@ PROJECT 1: SubZero - Subscription Killer (B2C Fintech SaaS)
 
 - Result: Made cancellation feel like winning, not losing.
 
-
-
 PROJECT 2: ClipForge - AI Clip Generator (B2C Creator Tool)
 
 - Tagline: "Your YouTube video is 10 TikToks you haven't posted yet"
@@ -68,15 +58,11 @@ PROJECT 2: ClipForge - AI Clip Generator (B2C Creator Tool)
 
 - Display as Before/After split: messy Premiere timeline vs clean ClipForge grid.
 
-
-
 ABOUT SECTION:
 
 - Text: "I used to ship features nobody used. Now I write the words that make them use it. As an ex full-stack dev, I don't just write copy — I think in flows, states, and edge cases. Empty state, error state, success state = all copy opportunities."
 
 - Add 3 bullet points: "I code what I write", "I write for activation, not just acquisition", "I A/B test words like features"
-
-
 
 CTA FOOTER:
 
@@ -85,8 +71,6 @@ CTA FOOTER:
 - Sub: "I'll do a free 15-min teardown loom of your onboarding."
 
 - Button: "Get My Free Teardown"
-
-
 
 DESIGN RULES:
 
@@ -99,8 +83,6 @@ DESIGN RULES:
 - Mobile responsive, keep sections tight (no huge gaps)
 
 - Keep it one-page scroll.
-
-
 
 Now apply all these changes to the index.html file I uploaded and give me the updated file ready to push to Render.
 
@@ -124,3 +106,15 @@ cd <repository-name>
 npm i
 npm run dev
 ```
+
+## Supabase Order Submissions
+
+Order creation uses a TanStack Start server function. Keep the existing `VITE_SUPABASE_URL` and
+`VITE_SUPABASE_PUBLISHABLE_KEY` values for public service reads. The server insert requires
+`SUPABASE_SERVICE_ROLE_KEY`; never use a `VITE_` prefix for this secret.
+
+For `npm run dev`, set `SUPABASE_SERVICE_ROLE_KEY` in the ignored `.env.local` file. For local
+Cloudflare preview with `npm run preview`, set it in the ignored `.dev.vars` file. In Cloudflare,
+configure it as a Worker secret in the dashboard or run
+`npx wrangler secret put SUPABASE_SERVICE_ROLE_KEY`. The `VITE_` values must also be available to
+the production build.

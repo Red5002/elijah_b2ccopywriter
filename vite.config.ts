@@ -5,8 +5,22 @@
 //     React/TanStack dedupe, error logger plugins, and sandbox detection (port/host/strictPort).
 // You can pass additional config via defineConfig({ vite: { ... }, etc... }) if needed.
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
+import { loadEnv } from "vite";
 
 export default defineConfig({
+  vite: {
+    plugins: [
+      {
+        name: "local-supabase-server-secret",
+        config(_config, { command, mode }) {
+          if (command !== "serve" || process.env["SUPABASE_SERVICE_ROLE_KEY"]) return;
+          const localEnv = loadEnv(mode, process.cwd(), "SUPABASE_SERVICE_ROLE_KEY");
+          const serviceRoleKey = localEnv["SUPABASE_SERVICE_ROLE_KEY"];
+          if (serviceRoleKey) process.env["SUPABASE_SERVICE_ROLE_KEY"] = serviceRoleKey;
+        },
+      },
+    ],
+  },
   nitro: {
     compatibilityDate: "2025-01-01",
   },

@@ -26,7 +26,7 @@ export function OrderSummary({ offerId, values }: OrderSummaryProps) {
         ))}
       </dl>
       <p className="portfolio-order-payment-note">
-        {"Payment is a placeholder in this prototype. No payment will be taken."}
+        {"No payment is taken when you submit this order request."}
       </p>
     </section>
   );
