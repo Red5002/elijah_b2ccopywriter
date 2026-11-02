@@ -161,6 +161,7 @@ describe("order schemas", () => {
 });
 
 describe("order submission", () => {
+  const submissionKey = "11111111-1111-4111-8111-111111111111";
   const validValues = {
     ...emptyOrderValues,
     name: "  Elijah Example  ",
@@ -184,18 +185,22 @@ describe("order submission", () => {
         price: 25,
         currency: "USD",
       }),
-      insertOrder: vi.fn().mockResolvedValue("ORD-12345"),
+      getOrderBySubmissionKey: vi.fn().mockResolvedValue(null),
+      insertOrder: vi.fn().mockResolvedValue({ id: "00000000-0000-4000-8000-000000000001", reference: "ORD-12345" }),
     };
   }
 
   it("validates details, derives service data, and maps the project brief", async () => {
     const repository = createRepository();
     const result = await createOrderRecord(
-      { serviceId: "paid-audit", values: validValues },
+      { serviceId: "paid-audit", submissionKey, values: validValues },
       repository,
     );
 
-    expect(result).toEqual({ reference: "ORD-12345" });
+    expect(result).toEqual({
+      id: "00000000-0000-4000-8000-000000000001",
+      reference: "ORD-12345",
+    });
     expect(repository.insertOrder).toHaveBeenCalledWith({
       customer_name: "Elijah Example",
       customer_email: "elijah@example.com",
@@ -203,6 +208,7 @@ describe("order submission", () => {
       service_name: "Paid Audit",
       price: 25,
       currency: "USD",
+      submission_key: submissionKey,
       project_details: expect.objectContaining({
         productName: "Example product",
         auditType: "Landing page",
@@ -212,6 +218,84 @@ describe("order submission", () => {
     if (!insertedOrder) throw new Error("Expected an order insert call.");
     expect(insertedOrder.project_details).not.toHaveProperty("name");
     expect(insertedOrder.project_details).not.toHaveProperty("email");
+  });
+
+  it("reuses an existing order when the same submission key is retried", async () => {
+    const repository = createRepository();
+    vi.mocked(repository.getOrderBySubmissionKey).mockResolvedValueOnce({
+      id: "00000000-0000-4000-8000-000000000002",
+      reference: "ORD-EXISTING",
+      service_id: "paid-audit",
+      customer_name: "Elijah Example",
+      customer_email: "elijah@example.com",
+      project_details: expect.objectContaining({
+        productName: "Example product",
+        auditType: "Landing page",
+      }),
+    });
+
+    await expect(
+      createOrderRecord(
+        {
+          serviceId: "paid-audit",
+          submissionKey,
+          values: validValues,
+        },
+        repository,
+      ),
+    ).resolves.toEqual({
+      id: "00000000-0000-4000-8000-000000000002",
+      reference: "ORD-EXISTING",
+    });
+    expect(repository.getActiveService).not.toHaveBeenCalled();
+    expect(repository.insertOrder).not.toHaveBeenCalled();
+  });
+
+  it("rejects a submission key already associated with another customer's order", async () => {
+    const repository = createRepository();
+    vi.mocked(repository.getOrderBySubmissionKey).mockResolvedValueOnce({
+      id: "00000000-0000-4000-8000-000000000002",
+      reference: "ORD-OTHER-CUSTOMER",
+      service_id: "paid-audit",
+      customer_name: "Other Customer",
+      customer_email: "other@example.com",
+      project_details: {},
+    });
+
+    await expect(
+      createOrderRecord({ serviceId: "paid-audit", submissionKey, values: validValues }, repository),
+    ).rejects.toMatchObject({ code: "validation" });
+    expect(repository.getActiveService).not.toHaveBeenCalled();
+    expect(repository.insertOrder).not.toHaveBeenCalled();
+  });
+
+  it("rejects reusing a submission key for different order details", async () => {
+    const repository = createRepository();
+    vi.mocked(repository.getOrderBySubmissionKey).mockResolvedValueOnce({
+      id: "00000000-0000-4000-8000-000000000003",
+      reference: "ORD-OTHER-DETAILS",
+      service_id: "paid-audit",
+      customer_name: "Elijah Example",
+      customer_email: "elijah@example.com",
+      project_details: {
+        productName: "Different product",
+        websiteAvailability: "public",
+        productUrl: "https://example.com",
+        productDescription: "A tool for managing work",
+        targetAudience: "Small teams",
+        auditType: "Landing page",
+        biggestConcern: "Visitors do not understand the product",
+        auditImprove: "Clarify the value proposition",
+        auditOutcome: "Know what to change",
+        additionalContext: "",
+      },
+    });
+
+    await expect(
+      createOrderRecord({ serviceId: "paid-audit", submissionKey, values: validValues }, repository),
+    ).rejects.toMatchObject({ code: "validation" });
+    expect(repository.getActiveService).not.toHaveBeenCalled();
+    expect(repository.insertOrder).not.toHaveBeenCalled();
   });
 
   it("creates Flow Fix orders from the active database service record", async () => {
@@ -237,7 +321,10 @@ describe("order submission", () => {
       currency: "USD",
     });
 
-    await createOrderRecord({ serviceId: "flow-fix", values: flowFixValues }, repository);
+    await createOrderRecord(
+      { serviceId: "flow-fix", submissionKey, values: flowFixValues },
+      repository,
+    );
 
     expect(repository.insertOrder).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -263,7 +350,7 @@ describe("order submission", () => {
     const repository = createRepository();
     await expect(
       createOrderRecord(
-        { serviceId: "paid-audit", values: { ...validValues, email: "not-an-email" } },
+        { serviceId: "paid-audit", submissionKey, values: { ...validValues, email: "not-an-email" } },
         repository,
       ),
     ).rejects.toMatchObject({ code: "validation" });
@@ -274,11 +361,11 @@ describe("order submission", () => {
   it("rejects unknown service IDs and untrusted order metadata", async () => {
     const repository = createRepository();
     await expect(
-      createOrderRecord({ serviceId: "unknown", values: validValues }, repository),
+      createOrderRecord({ serviceId: "unknown", submissionKey, values: validValues }, repository),
     ).rejects.toBeInstanceOf(OrderCreationError);
     await expect(
       createOrderRecord(
-        { serviceId: "paid-audit", values: validValues, price: 0, payment_status: "paid" },
+        { serviceId: "paid-audit", submissionKey, values: validValues, price: 0, payment_status: "paid" },
         repository,
       ),
     ).rejects.toMatchObject({ code: "validation" });
@@ -289,7 +376,7 @@ describe("order submission", () => {
     const repository = createRepository();
     vi.mocked(repository.getActiveService).mockResolvedValueOnce(null);
     await expect(
-      createOrderRecord({ serviceId: "paid-audit", values: validValues }, repository),
+      createOrderRecord({ serviceId: "paid-audit", submissionKey, values: validValues }, repository),
     ).rejects.toMatchObject({ code: "service-unavailable" });
     expect(repository.insertOrder).not.toHaveBeenCalled();
   });
@@ -298,7 +385,7 @@ describe("order submission", () => {
     const repository = createRepository();
     vi.mocked(repository.insertOrder).mockRejectedValueOnce(new Error("database internals"));
     await expect(
-      createOrderRecord({ serviceId: "paid-audit", values: validValues }, repository),
+      createOrderRecord({ serviceId: "paid-audit", submissionKey, values: validValues }, repository),
     ).rejects.toThrow("We couldn't create your order. Please try again.");
   });
 
@@ -332,7 +419,11 @@ describe("order submission", () => {
     vi.mocked(repository.insertOrder).mockRejectedValueOnce(databaseError);
 
     await expect(
-      createOrderRecord({ serviceId: "flow-fix", values: flowFixValues }, repository, reportError),
+      createOrderRecord(
+        { serviceId: "flow-fix", submissionKey, values: flowFixValues },
+        repository,
+        reportError,
+      ),
     ).rejects.toThrow("We couldn't create your order. Please try again.");
 
     expect(reportError).toHaveBeenCalledWith("order-insert", databaseError);

@@ -4,9 +4,24 @@ import { orderOffers, orderSchemas, type OrderOfferId } from "./orders";
 export const createOrderInputSchema = z
   .object({
     serviceId: z.enum(["paid-audit", "flow-fix", "activation-rewrite"]),
+    submissionKey: z
+      .string()
+      .regex(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i),
     values: z.record(z.string(), z.unknown()),
   })
   .strict();
+
+export type CreatedOrder = {
+  id: string;
+  reference: string;
+};
+
+type ExistingOrder = CreatedOrder & {
+  service_id: string;
+  customer_name: string;
+  customer_email: string;
+  project_details: Record<string, string>;
+};
 
 type ServiceRecord = {
   id: string;
@@ -23,11 +38,13 @@ type NewOrderRecord = {
   price: number;
   currency: string;
   project_details: Record<string, string>;
+  submission_key: string;
 };
 
 export type OrderRepository = {
   getActiveService: (serviceId: OrderOfferId) => Promise<ServiceRecord | null>;
-  insertOrder: (order: NewOrderRecord) => Promise<string | null>;
+  getOrderBySubmissionKey: (submissionKey: string) => Promise<ExistingOrder | null>;
+  insertOrder: (order: NewOrderRecord) => Promise<CreatedOrder | null>;
 };
 
 export type OrderErrorReporter = (operation: string, error: unknown) => void;
@@ -47,6 +64,17 @@ export class OrderCreationError extends Error {
   }
 }
 
+function sameProjectDetails(
+  existing: Record<string, string>,
+  submitted: Record<string, string>,
+): boolean {
+  const keys = Object.keys(submitted);
+  return (
+    keys.length === Object.keys(existing).length &&
+    keys.every((key) => existing[key] === submitted[key])
+  );
+}
+
 export async function createOrderRecord(
   input: unknown,
   repository: OrderRepository,
@@ -55,9 +83,38 @@ export async function createOrderRecord(
   const request = createOrderInputSchema.safeParse(input);
   if (!request.success) throw new OrderCreationError("validation");
 
-  const { serviceId, values } = request.data;
+  const { serviceId, submissionKey, values } = request.data;
   const form = orderSchemas[serviceId].safeParse(values);
   if (!form.success) throw new OrderCreationError("validation");
+
+  const submittedValues = form.data as Record<string, string>;
+  const customerName = form.data.name;
+  const customerEmail = form.data.email;
+  const projectDetails = Object.fromEntries(
+    orderOffers[serviceId].fields
+      .filter((field) => field.name !== "name" && field.name !== "email")
+      .map((field) => [field.name, submittedValues[field.name] ?? ""]),
+  );
+
+  let existingOrder: ExistingOrder | null;
+  try {
+    existingOrder = await repository.getOrderBySubmissionKey(submissionKey);
+  } catch (error) {
+    reportError?.("order-idempotency-lookup", error);
+    throw new OrderCreationError("database");
+  }
+
+  if (existingOrder) {
+    if (
+      existingOrder.service_id !== serviceId ||
+      existingOrder.customer_name !== customerName ||
+      existingOrder.customer_email.toLowerCase() !== customerEmail.toLowerCase() ||
+      !sameProjectDetails(existingOrder.project_details, projectDetails)
+    ) {
+      throw new OrderCreationError("validation");
+    }
+    return { id: existingOrder.id, reference: existingOrder.reference };
+  }
 
   let service: ServiceRecord | null;
   try {
@@ -71,22 +128,13 @@ export async function createOrderRecord(
   }
 
   const price = Number(service.price);
-  if (!service.name.trim() || !service.currency.trim() || !Number.isFinite(price) || price < 0) {
+  if (!service.name.trim() || !service.currency.trim() || !Number.isFinite(price) || price <= 0) {
     throw new OrderCreationError("database");
   }
 
-  const submittedValues = form.data as Record<string, string>;
-  const customerName = form.data.name;
-  const customerEmail = form.data.email;
-  const projectDetails = Object.fromEntries(
-    orderOffers[serviceId].fields
-      .filter((field) => field.name !== "name" && field.name !== "email")
-      .map((field) => [field.name, submittedValues[field.name] ?? ""]),
-  );
-
-  let reference: string | null;
+  let createdOrder: CreatedOrder | null;
   try {
-    reference = await repository.insertOrder({
+    createdOrder = await repository.insertOrder({
       customer_name: customerName,
       customer_email: customerEmail,
       service_id: service.id,
@@ -94,12 +142,34 @@ export async function createOrderRecord(
       price,
       currency: service.currency,
       project_details: projectDetails,
+      submission_key: submissionKey,
     });
   } catch (error) {
+    const isUniqueConflict =
+      typeof error === "object" &&
+      error !== null &&
+      Reflect.get(error, "code") === "23505";
+    if (isUniqueConflict) {
+      try {
+        const existingOrder = await repository.getOrderBySubmissionKey(submissionKey);
+        if (
+          existingOrder &&
+          existingOrder.service_id === serviceId &&
+          existingOrder.customer_name === customerName &&
+          existingOrder.customer_email.toLowerCase() === customerEmail.toLowerCase() &&
+          sameProjectDetails(existingOrder.project_details, projectDetails)
+        ) {
+          return { id: existingOrder.id, reference: existingOrder.reference };
+        }
+      } catch (lookupError) {
+        reportError?.("order-idempotency-lookup", lookupError);
+        throw new OrderCreationError("database");
+      }
+    }
     reportError?.("order-insert", error);
     throw new OrderCreationError("database");
   }
-  if (!reference) throw new OrderCreationError("database");
+  if (!createdOrder?.id || !createdOrder.reference) throw new OrderCreationError("database");
 
-  return { reference };
+  return createdOrder;
 }

@@ -1,7 +1,11 @@
 import "@tanstack/react-start/server-only";
 
 import { createClient } from "@supabase/supabase-js";
-import { createOrderRecord, OrderCreationError, type OrderRepository } from "./orderSubmission";
+import {
+  createOrderRecord,
+  OrderCreationError,
+  type OrderRepository,
+} from "./orderSubmission";
 
 function getSubmittedValues(input: unknown): string[] {
   if (input === null || typeof input !== "object" || !("values" in input)) return [];
@@ -114,14 +118,25 @@ export async function createOrderWithSupabase(input: unknown) {
         if (error) throw error;
         return data;
       },
+      async getOrderBySubmissionKey(submissionKey) {
+        const { data, error } = await adminClient
+          .from("orders")
+          .select("id, reference, service_id, customer_name, customer_email, project_details")
+          .eq("submission_key", submissionKey)
+          .maybeSingle();
+        if (error) throw error;
+        return data;
+      },
       async insertOrder(order) {
         const { data, error } = await adminClient
           .from("orders")
           .insert(order)
-          .select("reference")
+          .select("id, reference")
           .single();
         if (error) throw error;
-        return typeof data.reference === "string" ? data.reference : null;
+        return typeof data.id === "string" && typeof data.reference === "string"
+          ? { id: data.id, reference: data.reference }
+          : null;
       },
     };
 

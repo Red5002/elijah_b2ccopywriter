@@ -52,6 +52,15 @@
 .portfolio-order-total strong{color:var(--portfolio-accent)}
 .portfolio-order-summary dl{display:grid;gap:14px;margin:18px 0}
 .portfolio-order-summary dl>div{display:grid;gap:4px}
+.portfolio-order-currency{display:grid;gap:7px;margin-top:18px}
+.portfolio-order-currency label{font-size:13px;font-weight:600}
+.portfolio-order-currency select{min-height:44px;width:100%;padding:10px 12px;background:var(--surface);color:var(--text);border:1px solid var(--line);border-radius:var(--portfolio-radius);font:inherit}
+.portfolio-order-currency option{background:var(--bg);color:var(--text)}
+.payment-return{min-height:100vh;display:grid;place-items:center;padding:24px;background:var(--bg);color:var(--text)}
+.payment-return-card{width:min(560px,100%);padding:32px;background:var(--surface);border:1px solid var(--line);border-radius:var(--image-radius);box-shadow:var(--shadow)}
+.payment-return-card h1{font-size:28px;margin-bottom:16px}
+.payment-return-card p{color:var(--text-dim);margin:10px 0}
+.payment-return-card button{margin-top:16px}
 .portfolio-order-summary dt{color:var(--text-dim);font-size:12px}
 .portfolio-order-summary dd{margin:0;overflow-wrap:anywhere;white-space:pre-wrap}
 .portfolio-order-payment-note{padding-top:14px;border-top:1px solid var(--line);color:var(--text-dim);font-size:13px}
